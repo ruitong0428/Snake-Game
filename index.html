@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>超级贪吃蛇 - 终极换肤版</title>
+    <style>
+        /* CSS 样式部分 */
+        body {
+            background-color: #1a252f;
+            color: #ecf0f1;
+            font-family: 'Segoe UI', 'Microsoft YaHei', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 440px;
+            text-align: center;
+            position: relative;
+            background-color: #2c3e50;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+        }
+
+        /* 界面切换 */
+        .screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* 开始界面样式 */
+        #start-screen h1 {
+            font-size: 2.8rem;
+            margin-top: 10px;
+            margin-bottom: 25px;
+            color: #1abc9c;
+            text-shadow: 2px 4px 6px rgba(0,0,0,0.3);
+            letter-spacing: 2px;
+        }
+
+        /* 菜单蛇动画 */
+        .snake-animation {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 30px;
+            padding: 15px;
+            background: #22313f;
+            border-radius: 8px;
+            width: 180px;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .s-part {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            animation: bounce 0.6s infinite alternate;
+        }
+        .s-part.head { background-color: #2ecc71; animation-delay: 0s; }
+        .s-part.body1 { background-color: #27ae60; animation-delay: 0.15s; }
+        .s-part.body2 { background-color: #1e8449; animation-delay: 0.3s; }
+        .s-part.tail { background-color: #145a32; animation-delay: 0.45s; }
+
+        @keyframes bounce {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-8px); }
+        }
+
+        /* 难度选择界面 */
+        #difficulty-screen h2 {
+            font-size: 2rem;
+            margin-bottom: 25px;
+            color: #f1c40f;
+        }
+
+        .difficulty-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+            max-width: 280px;
+        }
+
+        /* 按钮设计 */
+        button {
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            font-family: inherit;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .big-btn {
+            padding: 15px 45px;
+            font-size: 1.4rem;
+            background: linear-gradient(135deg, #1abc9c, #16a085);
+            color: white;
+            margin-bottom: 15px;
+        }
+
+        /* 皮肤按钮独立样式 */
+        .skin-btn-main {
+            padding: 10px 25px;
+            font-size: 1rem;
+            background: #34495e;
+            color: #ecf0f1;
+            border: 2px solid #1abc9c;
+        }
+
+        .diff-btn {
+            padding: 14px;
+            font-size: 1.1rem;
+            color: white;
+            text-align: left;
+            padding-left: 25px;
+            position: relative;
+        }
+        .diff-btn::after {
+            content: '➔';
+            position: absolute;
+            right: 20px;
+            opacity: 0.7;
+        }
+        .diff-btn[data-mode="easy"] { background: linear-gradient(135deg, #2ecc71, #27ae60); }
+        .diff-btn[data-mode="medium"] { background: linear-gradient(135deg, #f39c12, #d35400); }
+        .diff-btn[data-mode="hard"] { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+
+        .sm-btn {
+            padding: 10px 18px;
+            font-size: 0.95rem;
+            background-color: #7f8c8d;
+            color: white;
+        }
+        #restartBtn { background-color: #1abc9c; }
+
+        /* 游戏界面 */
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 12px;
+            background-color: #22313f;
+            padding: 10px 15px;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+        
+        .score-container span { color: #f1c40f; }
+        .mode-container span { color: #3498db; }
+
+        #gameCanvas {
+            background-color: #22313f;
+            border: 4px solid #34495e;
+            border-radius: 8px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+            display: block;
+        }
+
+        .game-controls {
+            margin-top: 18px;
+            display: flex;
+            gap: 15px;
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .tips {
+            margin-top: 12px;
+            font-size: 0.85rem;
+            color: #bdc3c7;
+            line-height: 1.4;
+        }
+
+        /* 🌟 新增：换肤弹窗（Modal）样式 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-content {
+            background-color: #2c3e50;
+            padding: 30px;
+            border-radius: 12px;
+            border: 3px solid #1abc9c;
+            width: 300px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+
+        .modal-content h3 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #1abc9c;
+            font-size: 1.5rem;
+        }
+
+        .skin-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .skin-opt-btn {
+            padding: 12px;
+            font-size: 1rem;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            border-radius: 6px;
+        }
+
+        /* 5种可选颜色方案 */
+        .skin-opt-btn[data-color="green"] { background: linear-gradient(135deg, #2ecc71, #27ae60); }
+        .skin-opt-btn[data-color="blue"] { background: linear-gradient(135deg, #3498db, #2980b9); }
+        .skin-opt-btn[data-color="yellow"] { background: linear-gradient(135deg, #f1c40f, #f39c12); }
+        .skin-opt-btn[data-color="pink"] { background: linear-gradient(135deg, #e84393, #fd79a8); }
+        .skin-opt-btn[data-color="orange"] { background: linear-gradient(135deg, #e67e22, #d35400); }
+
+        .close-modal-btn {
+            background-color: #7f8c8d;
+            color: white;
+            padding: 8px 20px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <div id="start-screen" class="screen">
+            <h1>超级贪吃蛇</h1>
+            <div class="snake-animation">
+                <div class="s-part head" id="menu-head"></div>
+                <div class="s-part body1" id="menu-body1"></div>
+                <div class="s-part body2" id="menu-body2"></div>
+                <div class="s-part tail" id="menu-tail"></div>
+            </div>
+            <button id="startBtn" class="big-btn">开始游戏</button>
+            <button id="openSkinBtn" class="skin-btn-main">更换蛇皮颜色</button>
+        </div>
+
+        <div id="difficulty-screen" class="screen hidden">
+            <h2>选择游戏难度</h2>
+            <div class="difficulty-buttons">
+                <button class="diff-btn" data-mode="easy">简单模式 (经典吃苹果)</button>
+                <button class="diff-btn" data-mode="medium">中等模式 (加入地雷炸弹)</button>
+                <button class="diff-btn" data-mode="hard">困难模式 (红蛇追击+炸弹)</button>
+            </div>
+        </div>
+
+        <div id="game-area" class="screen hidden">
+            <div class="game-header">
+                <div class="score-container">分数: <span id="score">0</span></div>
+                <div class="mode-container"><span id="mode-name">简单</span></div>
+            </div>
+            <canvas id="gameCanvas" width="400" height="400"></canvas>
+            <div id="game-tips" class="tips"></div>
+            <div class="game-controls">
+                <button id="restartBtn" class="sm-btn">重新开始</button>
+                <button id="backBtn" class="sm-btn">主菜单</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="skin-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3>选择你的蛇皮颜色</h3>
+            <div class="skin-options">
+                <button class="skin-opt-btn" data-color="green">翡翠绿 (经典)</button>
+                <button class="skin-opt-btn" data-color="blue">星海蓝</button>
+                <button class="skin-opt-btn" data-color="yellow">极光黄</button>
+                <button class="skin-opt-btn" data-color="pink">芭比粉</button>
+                <button class="skin-opt-btn" data-color="orange">活力橙</button>
+            </div>
+            <button id="closeSkinBtn" class="close-modal-btn">返回</button>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM 元素获取 ---
+        const startScreen = document.getElementById("start-screen");
+        const difficultyScreen = document.getElementById("difficulty-screen");
+        const gameArea = document.getElementById("game-area");
+        const skinModal = document.getElementById("skin-modal");
+
+        const startBtn = document.getElementById("startBtn");
+        const openSkinBtn = document.getElementById("openSkinBtn");
+        const closeSkinBtn = document.getElementById("closeSkinBtn");
+        const diffButtons = document.querySelectorAll(".diff-btn");
+        const skinButtons = document.querySelectorAll(".skin-opt-btn");
+        const restartBtn = document.getElementById("restartBtn");
+        const backBtn = document.getElementById("backBtn");
+
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const scoreDisplay = document.getElementById("score");
+        const modeNameDisplay = document.getElementById("mode-name");
+        const gameTips = document.getElementById("game-tips");
+
+        // --- 游戏固定网格配置 ---
+        const gridSize = 20;
+        const tileCount = canvas.width / gridSize; 
+
+        // --- 🌟 换肤颜色配置表 ---
+        let currentSkin = 'green'; // 默认皮肤
+        const skinColors = {
+            green:  { head: "#2ecc71", body: "#27ae60" },
+            blue:   { head: "#3498db", body: "#2980b9" },
+            yellow: { head: "#f1c40f", body: "#f39c12" },
+            pink:   { head: "#e84393", body: "#fd79a8" },
+            orange: { head: "#e67e22", body: "#d35400" }
+        };
+
+        // --- 游戏运行状态变量 ---
+        let currentMode = 'easy'; 
+        let isGameRunning = false;
+        let gameInterval;
+        
+        let snake = [];           
+        let food = { x: 0, y: 0 }; 
+        let dx = gridSize;        
+        let dy = 0;               
+        let score = 0;            
+
+        // 升级版专属变量
+        let bombs = [];               
+        const maxBombs = 4;           
+        let enemySnake = [];          
+        let enemyDirection = { dx: 0, dy: gridSize }; 
+        let enemyMoveCounter = 0;     
+
+        // --- 界面路由与事件监听 ---
+
+        startBtn.addEventListener("click", () => {
+            showScreen(difficultyScreen);
+        });
+
+        // 弹窗控制逻辑
+        openSkinBtn.addEventListener("click", () => {
+            skinModal.classList.remove("hidden");
+        });
+        closeSkinBtn.addEventListener("click", () => {
+            skinModal.classList.add("hidden");
+        });
+
+        // 选择皮肤逻辑
+        skinButtons.forEach(btn => {
+            btn.addEventListener("click", () => {
+                currentSkin = btn.dataset.color;
+                updateMenuSnakeSkin(); // 同步更新首页动画蛇的颜色
+                skinModal.classList.add("hidden"); // 选择后自动关闭弹窗
+            });
+        });
+
+        diffButtons.forEach(btn => {
+            btn.addEventListener("click", () => {
+                currentMode = btn.dataset.mode;
+                startGame();
+            });
+        });
+
+        restartBtn.addEventListener("click", startGame);
+        backBtn.addEventListener("click", () => {
+            stopGameLoop();
+            showScreen(startScreen);
+        });
+
+        document.addEventListener("keydown", handleKeyDown);
+
+        function showScreen(screenToShow) {
+            [startScreen, difficultyScreen, gameArea].forEach(screen => {
+                screen.classList.add("hidden");
+            });
+            screenToShow.classList.remove("hidden");
+        }
+
+        // 动态更新首页动画蛇皮颜色的函数
+        function updateMenuSnakeSkin() {
+            const colors = skinColors[currentSkin];
+            document.getElementById("menu-head").style.backgroundColor = colors.head;
+            document.getElementById("menu-body1").style.backgroundColor = colors.body;
+            document.getElementById("menu-body2").style.backgroundColor = colors.body;
+            document.getElementById("menu-tail").style.backgroundColor = colors.body;
+        }
+
+        // --- 游戏核心控制机制 ---
+
+        function startGame() {
+            isGameRunning = true;
+            showScreen(gameArea);
+            
+            if (currentMode === 'easy') {
+                modeNameDisplay.innerText = "简单模式";
+                gameTips.innerHTML = "🟢 彩蛇: 玩家 (方向键控制)<br>🔴 红方块: 奖励苹果 (+10分)";
+            } else if (currentMode === 'medium') {
+                modeNameDisplay.innerText = "中等模式";
+                gameTips.innerHTML = "🔴 苹果: +10分 | ⚫ 黑色地雷: 💥 扣20分！<br>⚠️ 注意：撞墙、撞自己或分数低于0分皆会失败！";
+            } else if (currentMode === 'hard') {
+                modeNameDisplay.innerText = "困难模式";
+                gameTips.innerHTML = "⚫ 地雷: 扣20分 | 🟣 紫蛇: 👿 正在疯狂追击你！<br>绝对不能被紫蛇撞到，利用走位甩开它！";
+            }
+            
+            resetGameData();
+            stopGameLoop();
+            gameInterval = setInterval(gameLoop, 110); 
+        }
+
+        function stopGameLoop() {
+            if (gameInterval) clearInterval(gameInterval);
+        }
+
+        function resetGameData() {
+            snake = [
+                { x: gridSize * 5, y: gridSize * 6 },
+                { x: gridSize * 4, y: gridSize * 6 },
+                { x: gridSize * 3, y: gridSize * 6 }
+            ];
+            dx = gridSize;
+            dy = 0;
+            score = 0;
+            scoreDisplay.innerText = score;
+            
+            generateFoodPosition();
+            
+            bombs = [];
+            if (currentMode === 'medium' || currentMode === 'hard') {
+                for (let i = 0; i < maxBombs; i++) {
+                    bombs.push(getValidRandomPosition());
+                }
+            }
+
+            enemySnake = [];
+            if (currentMode === 'hard') {
+                enemySnake = [
+                    { x: gridSize * (tileCount - 3), y: gridSize * (tileCount - 3) },
+                    { x: gridSize * (tileCount - 3), y: gridSize * (tileCount - 4) }
+                ];
+                enemyDirection = { dx: 0, dy: gridSize };
+                enemyMoveCounter = 0;
+            }
+        }
+
+        function gameLoop() {
+            if (!isGameRunning) return;
+
+            if (checkIsGameOver()) {
+                isGameRunning = false;
+                stopGameLoop();
+                setTimeout(() => {
+                    alert(`【游戏结束】\n最终得分: ${score}\n请点击确定后重新尝试！`);
+                }, 50);
+                return;
+            }
+
+            clearCanvas();
+            drawFood();
+            if (currentMode === 'medium' || currentMode === 'hard') {
+                drawBombs();
+            }
+            
+            advancePlayerSnake();
+            drawPlayerSnake();
+
+            if (currentMode === 'hard') {
+                enemyMoveCounter++;
+                if (enemyMoveCounter >= 2) { 
+                    chasePlayerAI();
+                    enemyMoveCounter = 0;
+                }
+                drawEnemySnake();
+            }
+        }
+
+        // --- 图形渲染模块 ---
+
+        function clearCanvas() {
+            ctx.fillStyle = "#22313f";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.02)";
+            for (let i = 0; i < canvas.width; i += gridSize) {
+                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke();
+            }
+        }
+
+        function drawPlayerSnake() {
+            // 🌟 核心改动：使用当前选择的换肤颜色进行绘制
+            const colors = skinColors[currentSkin];
+            snake.forEach((part, index) => {
+                ctx.fillStyle = index === 0 ? colors.head : colors.body; 
+                ctx.strokeStyle = "#22313f";
+                ctx.fillRect(part.x + 1, part.y + 1, gridSize - 2, gridSize - 2);
+                ctx.strokeRect(part.x, part.y, gridSize, gridSize);
+            });
+        }
+
+        function drawEnemySnake() {
+            enemySnake.forEach((part, index) => {
+                ctx.fillStyle = index === 0 ? "#9b59b6" : "#8e44ad"; 
+                ctx.strokeStyle = "#22313f";
+                ctx.fillRect(part.x + 1, part.y + 1, gridSize - 2, gridSize - 2);
+                ctx.strokeRect(part.x, part.y, gridSize, gridSize);
+            });
+        }
+
+        function drawFood() {
+            ctx.fillStyle = "#e74c3c";
+            ctx.beginPath();
+            let r = gridSize / 2;
+            ctx.arc(food.x + r, food.y + r, r - 2, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+
+        function drawBombs() {
+            bombs.forEach(bomb => {
+                ctx.fillStyle = "#000000";
+                ctx.beginPath();
+                let r = gridSize / 2;
+                ctx.arc(bomb.x + r, bomb.y + r, r - 3, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                ctx.fillStyle = "#f1c40f";
+                ctx.fillRect(bomb.x + gridSize/2 - 2, bomb.y + gridSize/2 - 2, 4, 4);
+            });
+        }
+
+        // --- 行动逻辑模块 ---
+
+        function advancePlayerSnake() {
+            const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+            snake.unshift(head);
+
+            if (snake[0].x === food.x && snake[0].y === food.y) {
+                score += 10;
+                scoreDisplay.innerText = score;
+                generateFoodPosition();
+            } 
+            else if ((currentMode === 'medium' || currentMode === 'hard') && handleBombBlastCollision(snake[0])) {
+                score -= 20;
+                scoreDisplay.innerText = score;
+                snake.pop(); 
+            } 
+            else {
+                snake.pop();
+            }
+        }
+
+        function chasePlayerAI() {
+            if (enemySnake.length === 0) return;
+
+            const eHead = enemySnake[0];
+            const pHead = snake[0];
+
+            let nextDx = 0;
+            let nextDy = 0;
+
+            if (eHead.x !== pHead.x) {
+                nextDx = eHead.x < pHead.x ? gridSize : -gridSize;
+            } else if (eHead.y !== pHead.y) {
+                nextDy = eHead.y < pHead.y ? gridSize : -gridSize;
+            }
+
+            if (nextDx === -enemyDirection.dx && nextDx !== 0) nextDx = 0;
+            if (nextDy === -enemyDirection.dy && nextDy !== 0) nextDy = 0;
+
+            if (nextDx === 0 && nextDy === 0) {
+                if (enemyDirection.dx !== 0) {
+                    nextDy = eHead.y < pHead.y ? gridSize : -gridSize;
+                } else {
+                    nextDx = eHead.x < pHead.x ? gridSize : -gridSize;
+                }
+            }
+
+            enemyDirection = { dx: nextDx, dy: nextDy };
+
+            const newEnemyHead = { x: eHead.x + enemyDirection.dx, y: eHead.y + enemyDirection.dy };
+            enemySnake.unshift(newEnemyHead);
+            enemySnake.pop();
+        }
+
+        // --- 安全坐标生成 ---
+
+        function getValidRandomPosition() {
+            let targetPos = {};
+            let isColliding = true;
+
+            while (isColliding) {
+                targetPos.x = Math.floor(Math.random() * tileCount) * gridSize;
+                targetPos.y = Math.floor(Math.random() * tileCount) * gridSize;
+                isColliding = false;
+
+                snake.forEach(part => { if (part.x === targetPos.x && part.y === targetPos.y) isColliding = true; });
+                enemySnake.forEach(part => { if (part.x === targetPos.x && part.y === targetPos.y) isColliding = true; });
+                if (food.x === targetPos.x && food.y === targetPos.y) isColliding = true;
+                bombs.forEach(b => { if (b.x === targetPos.x && b.y === targetPos.y) isColliding = true; });
+            }
+            return targetPos;
+        }
+
+        function generateFoodPosition() {
+            food = getValidRandomPosition();
+        }
+
+        function handleBombBlastCollision(head) {
+            for (let i = 0; i < bombs.length; i++) {
+                if (bombs[i].x === head.x && bombs[i].y === head.y) {
+                    bombs.splice(i, 1); 
+                    bombs.push(getValidRandomPosition()); 
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function handleKeyDown(event) {
+            if (!isGameRunning) return;
+
+            const key = event.keyCode;
+            const LEFT = 37; const UP = 38; const RIGHT = 39; const DOWN = 40;
+
+            const isMovingUp = (dy === -gridSize);
+            const isMovingDown = (dy === gridSize);
+            const isMovingRight = (dx === gridSize);
+            const isMovingLeft = (dx === -gridSize);
+
+            if (key === LEFT && !isMovingRight) { dx = -gridSize; dy = 0; }
+            if (key === UP && !isMovingDown) { dx = 0; dy = -gridSize; }
+            if (key === RIGHT && !isMovingLeft) { dx = gridSize; dy = 0; }
+            if (key === DOWN && !isMovingUp) { dx = 0; dy = -gridSize; }
+        }
+
+        function checkIsGameOver() {
+            const head = snake[0];
+
+            if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height) return true;
+
+            for (let i = 3; i < snake.length; i++) {
+                if (snake[i].x === head.x && snake[i].y === head.y) return true;
+            }
+
+            if (score < 0) return true;
+
+            if (currentMode === 'hard') {
+                for (let i = 0; i < enemySnake.length; i++) {
+                    if (enemySnake[i].x === head.x && enemySnake[i].y === head.y) return true;
+                }
+            }
+
+            return false;
+        }
+    </script>
+</body>
+</html>
